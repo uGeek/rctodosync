@@ -1,0 +1,67 @@
+#!/bin/bash
+#  rctodosync v0.2 Share tasks with multiple users using todo.txt
+#  Copyright (C) 2021 Angel. uGeek
+#  ugeekpodcast@gmail.com
+
+
+mkdir -p ~/.config/rctodosync
+
+source ~/.config/rctodosync/$1
+
+VERSION=v0.1
+
+echo "rctodo $VERSION. sincronizando 2 todo.txt 
+       
+        Intervalo de actualización $TIEMPO_ACTUALIZACION
+        
+        Archivo todo.txt 1 : $SERVIDOR1       
+        Archivo todo.txt 2 : $SERVIDOR2 
+"
+
+TODOTXT1=$(rclone cat $SERVIDOR1/todo.txt)
+TODOTXT2=$(rclone cat $SERVIDOR2/todo.txt)
+
+SYNCFILE=$(echo -e "$(echo "$TODOTXT1" | grep "$WORD")\n$(echo "$TODOTXT2" | grep "$WORD")" | sort | uniq)
+
+echo "Tareas con la palabra $WORD"
+echo "----------------------------------------"
+echo "$SYNCFILE"
+echo "----------------------------------------"
+echo ""
+
+
+echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE")" | rclone rcat $SERVIDOR1/todo.txt
+echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE")" | rclone rcat $SERVIDOR2/todo.txt
+
+while :
+do
+    
+    echo -e "$(date +'%Y-%m-%d  %T')      update cada $TIEMPO_ACTUALIZACION"
+ 
+    TODOTXT1=$(rclone cat $SERVIDOR1/todo.txt)
+    SYNCFILE1=$(echo -e "$(echo "$TODOTXT1" | grep "$WORD")")
+    
+    if [ "$SYNCFILE" != "$SYNCFILE1" ]; then
+        echo ""
+        echo "$(date +'%Y-%m-%d  %T')      Nueva entrada en Servidor 1. Sincronizando todo.txt"
+        echo ""
+        echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE1")" | rclone rcat $SERVIDOR1/todo.txt
+        echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE1")" | rclone rcat $SERVIDOR2/todo.txt
+        SYNCFILE=$(echo -e "$SYNCFILE1")
+    fi
+    
+    TODOTXT2=$(rclone cat $SERVIDOR2/todo.txt)
+    SYNCFILE2=$(echo -e "$(echo "$TODOTXT2" | grep "$WORD")")
+    
+    if [ "$SYNCFILE" != "$SYNCFILE2" ]; then
+        echo ""
+        echo "$(date +'%Y-%m-%d  %T')      Nueva entrada en Servidor 2. Sincronizando todo.txt"
+        echo ""
+        echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE2")" | rclone rcat $SERVIDOR2/todo.txt
+        echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE2")" | rclone rcat $SERVIDOR1/todo.txt
+        SYNCFILE=$(echo -e "$(echo "$TODOTXT1" | grep "$WORD")\n$(echo "$TODOTXT2" | grep "$WORD")" | sort | uniq)
+    fi
+   
+    sleep $TIEMPO_ACTUALIZACION
+
+done

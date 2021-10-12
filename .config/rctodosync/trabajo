@@ -1,0 +1,8 @@
+SERVIDOR1=dropbox:todo      # Directorio (rclone) donde está situado el archivo todo.txt
+SERVIDOR2=drive-trabajo:todo
+WORD="@trabajo"             # Palabra en común para la sincronización entre ambos todo.txt
+TIEMPO_ACTUALIZACION=5m     # Tiempo que se producirá la sincronización. 5m = 5 minutos.  s = segundos m = minutos h = horas
+
+# Notificaciones Telegram
+TOKEN="305386591:AAH5avqawerqerv8973451t4"
+ID="5834877"

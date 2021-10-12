@@ -4,7 +4,7 @@
 #  ugeekpodcast@gmail.com
 #
 #
-VERSION=v0.2
+VERSION=v0.3
 #
 #
 
@@ -66,8 +66,10 @@ then
 
 source ~/.config/rctodosync/$1
 
-curl -X POST https://api.telegram.org/bot$TOKEN/sendMessage\?chat_id\=$ID\&text\="rctodosync: Iniciando sincronización. sesión $1" > /dev/null 2>&1
+chmod a+x ~/.config/rctodosync/*
 
+
+$HOME/.config/rctodosync/notification "rctodosync: Iniciando sincronización de la sesión $1" > /dev/null 2>&1
 
 echo "rctodo $VERSION. sincronizando 2 todo.txt 
        
@@ -78,10 +80,16 @@ echo "rctodo $VERSION. sincronizando 2 todo.txt
 "
 
 
-TODOTXT1=$(rclone cat $SERVIDOR1/todo.txt)
-TODOTXT2=$(rclone cat $SERVIDOR2/todo.txt)
 
+TODOTXT1=$(rclone cat $SERVIDOR1/todo.txt)
+DONETXT1=$(rclone cat $SERVIDOR1/done.txt)
+TODOTXT2=$(rclone cat $SERVIDOR2/todo.txt)
+DONETXT2=$(rclone cat $SERVIDOR2/done.txt)
+
+# Filtramos para sincronizar
 SYNCFILE=$(echo -e "$(echo "$TODOTXT1" | grep "$WORD")\n$(echo "$TODOTXT2" | grep "$WORD")" | sort | uniq)
+SYNCFILEDONE=$(echo -e "$(echo "$DONETXT1" | grep "$WORD")\n$(echo "$DONETXT2" | grep "$WORD")" | sort | uniq)
+
 
 echo "Tareas con la palabra $WORD"
 echo "----------------------------------------"
@@ -89,8 +97,10 @@ echo "$SYNCFILE"
 echo "----------------------------------------"
 echo ""
 
-echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE")" | rclone rcat $SERVIDOR1/todo.txt
-echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE")" | rclone rcat $SERVIDOR2/todo.txt
+echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE")"     | rclone rcat $SERVIDOR1/todo.txt
+echo -e "$(echo "$DONETXT1" | grep -v "$WORD")\n$(echo "$SYNCFILEDONE")" | rclone rcat $SERVIDOR1/done.txt
+echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE")"     | rclone rcat $SERVIDOR2/todo.txt
+echo -e "$(echo "$DONETXT2" | grep -v "$WORD")\n$(echo "$SYNCFILEDONE")" | rclone rcat $SERVIDOR2/done.txt
 
 
 while :
@@ -98,7 +108,8 @@ do
     
     echo -e "$(date +'%Y-%m-%d  %T')      update cada $TIEMPO_ACTUALIZACION"
  
-    TODOTXT1=$(rclone cat $SERVIDOR1/todo.txt)
+    # Listamos tareas
+    TODOTXT1=$(rclone cat $SERVIDOR1/todo.txt)    
     SYNCFILE1=$(echo -e "$(echo "$TODOTXT1" | grep "$WORD")")
     
     if [ "$SYNCFILE" != "$SYNCFILE1" ]; then
@@ -107,8 +118,13 @@ do
 	echo ""
 	echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE1")" | rclone rcat $SERVIDOR1/todo.txt
 	echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE1")" | rclone rcat $SERVIDOR2/todo.txt
+	# done
+        DONETXT1=$(rclone cat $SERVIDOR1/done.txt)
+        DONETXT2=$(rclone cat $SERVIDOR2/done.txt)	
+	SYNCFILEDONE=$(echo -e "$(echo "$DONETXT1" | grep "$WORD")\n$(echo "$DONETXT2" | grep "$WORD")" | sort | uniq)
+	echo -e "$(echo "$DONETXT1" | grep -v "$WORD")\n$(echo "$SYNCFILEDONE")" | rclone rcat $SERVIDOR1/done.txt
         SYNCFILE=$(echo -e "$SYNCFILE1")
-	curl -X POST https://api.telegram.org/bot$TOKEN/sendMessage\?chat_id\=$ID\&text\="rctodosync: archivo todo.txt modificado en el Servidor 1 . Sesión $1" > /dev/null 2>&1
+	$HOME/.config/rctodosync/notification "rctodosync: archivo todo.txt modificado en el Servidor 1 . Sesión $1" > /dev/null 2>&1
     fi
     
     TODOTXT2=$(rclone cat $SERVIDOR2/todo.txt)
@@ -120,10 +136,14 @@ do
 	echo ""
 	echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE2")" | rclone rcat $SERVIDOR2/todo.txt
 	echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE2")" | rclone rcat $SERVIDOR1/todo.txt
+	# done
+        DONETXT1=$(rclone cat $SERVIDOR1/done.txt)
+        DONETXT2=$(rclone cat $SERVIDOR2/done.txt)	
+	SYNCFILEDONE=$(echo -e "$(echo "$DONETXT1" | grep "$WORD")\n$(echo "$DONETXT2" | grep "$WORD")" | sort | uniq)
+	echo -e "$(echo "$DONETXT2" | grep -v "$WORD")\n$(echo "$SYNCFILEDONE")" | rclone rcat $SERVIDOR2/done.txt
         SYNCFILE=$(echo -e "$(echo "$TODOTXT1" | grep "$WORD")\n$(echo "$TODOTXT2" | grep "$WORD")" | sort | uniq)
-	curl -X POST https://api.telegram.org/bot$TOKEN/sendMessage\?chat_id\=$ID\&text\="rctodosync: archivo todo.txt modificado en el Servidor 2. Sesión $1" > /dev/null 2>&1
+	$HOME/.config/rctodosync/notification "rctodosync: archivo todo.txt modificado en el Servidor 2 . Sesión $1" > /dev/null 2>&1
     fi
-   
     sleep $TIEMPO_ACTUALIZACION
-
 done
+

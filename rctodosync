@@ -2,21 +2,81 @@
 #  rctodosync v0.2 Share tasks with multiple users using todo.txt
 #  Copyright (C) 2021 Angel. uGeek
 #  ugeekpodcast@gmail.com
+#
+#
+VERSION=v0.2
+#
+#
+
+
+
+if [ "$1" = "-h" ] || [ "$1" = "--help" ] || [ "$1" = "h" ] || [ "$1" = "" ]
+then
+
+    echo "
+---------------------------------------------------------------------------------                                                           
+rctodosync      [opción]           Descripción
+---------------------------------------------------------------------------------      
+rctodosync      archivo_config     Sincroniza según el archivo de configuración
+rctodosync      e  archivo_config  Editar archivo de configuración  
+rctodosync      --help, h,...      Ayuda
+
+rctodosync $VERSION
+"
+	exit
+	fi
 
 
 mkdir -p ~/.config/rctodosync
 
+
+if [ -f ~/.config/rctodosync/editor ];
+then
+    source ~/.config/rctodosync/editor
+else
+    echo -en "¿Que editor de texto quieres utilizar para configurar rctodosync?: " ; read edit
+    echo "EDITOR='$edit'" >  ~/.config/rctodosync/editor
+    source ~/.config/rctodosync/editor
+    exit
+    fi            
+
+
+if [ "$1" = "e" ]
+then
+    if [ -f ~/.config/rctodosync/$2 ];
+    then
+        echo ""
+	else	
+	    echo -en "No has indicado ningún archivo de configuración o no existe. ¿Quieres crearlo?: " ; read RESPUESTA
+	    if [ "$RESPUESTA" = "SI" ] || [ "$RESPUESTA" = "S" ] || [ "$RESPUESTA" = "si" ] || [ "$RESPUESTA" = "s" ] || [ "$RESPUESTA" = "y" ] || [ "$RESPUESTA" = "yes" ]
+            then
+            $EDITOR ~/.config/rctodosync/$2
+            clear
+            fi
+    exit
+    fi
+    fi
+
+
+if [ "$1" = "e" ]
+then
+    $EDITOR ~/.config/rctodosync/$2
+    exit
+    fi  
+
 source ~/.config/rctodosync/$1
 
-VERSION=v0.1
+curl -X POST https://api.telegram.org/bot$TOKEN/sendMessage\?chat_id\=$ID\&text\="rctodosync: Iniciando sincronización. sesión $1" > /dev/null 2>&1
+
 
 echo "rctodo $VERSION. sincronizando 2 todo.txt 
        
         Intervalo de actualización $TIEMPO_ACTUALIZACION
         
-        Archivo todo.txt 1 : $SERVIDOR1       
-        Archivo todo.txt 2 : $SERVIDOR2 
+        Archivo 1 : $SERVIDOR1       
+        Archivo 2 : $SERVIDOR2 
 "
+
 
 TODOTXT1=$(rclone cat $SERVIDOR1/todo.txt)
 TODOTXT2=$(rclone cat $SERVIDOR2/todo.txt)
@@ -29,9 +89,9 @@ echo "$SYNCFILE"
 echo "----------------------------------------"
 echo ""
 
-
 echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE")" | rclone rcat $SERVIDOR1/todo.txt
 echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE")" | rclone rcat $SERVIDOR2/todo.txt
+
 
 while :
 do
@@ -42,24 +102,26 @@ do
     SYNCFILE1=$(echo -e "$(echo "$TODOTXT1" | grep "$WORD")")
     
     if [ "$SYNCFILE" != "$SYNCFILE1" ]; then
-        echo ""
-        echo "$(date +'%Y-%m-%d  %T')      Nueva entrada en Servidor 1. Sincronizando todo.txt"
-        echo ""
-        echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE1")" | rclone rcat $SERVIDOR1/todo.txt
-        echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE1")" | rclone rcat $SERVIDOR2/todo.txt
+	echo ""
+	echo "$(date +'%Y-%m-%d  %T')      Nueva entrada en Servidor 1. Sincronizando todo.txt"
+	echo ""
+	echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE1")" | rclone rcat $SERVIDOR1/todo.txt
+	echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE1")" | rclone rcat $SERVIDOR2/todo.txt
         SYNCFILE=$(echo -e "$SYNCFILE1")
+	curl -X POST https://api.telegram.org/bot$TOKEN/sendMessage\?chat_id\=$ID\&text\="rctodosync: archivo todo.txt modificado en el Servidor 1 . Sesión $1" > /dev/null 2>&1
     fi
     
     TODOTXT2=$(rclone cat $SERVIDOR2/todo.txt)
     SYNCFILE2=$(echo -e "$(echo "$TODOTXT2" | grep "$WORD")")
     
     if [ "$SYNCFILE" != "$SYNCFILE2" ]; then
-        echo ""
-        echo "$(date +'%Y-%m-%d  %T')      Nueva entrada en Servidor 2. Sincronizando todo.txt"
-        echo ""
-        echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE2")" | rclone rcat $SERVIDOR2/todo.txt
-        echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE2")" | rclone rcat $SERVIDOR1/todo.txt
+	echo ""
+	echo "$(date +'%Y-%m-%d  %T')      Nueva entrada en Servidor 2. Sincronizando todo.txt"
+	echo ""
+	echo -e "$(echo "$TODOTXT2" | grep -v "$WORD")\n$(echo "$SYNCFILE2")" | rclone rcat $SERVIDOR2/todo.txt
+	echo -e "$(echo "$TODOTXT1" | grep -v "$WORD")\n$(echo "$SYNCFILE2")" | rclone rcat $SERVIDOR1/todo.txt
         SYNCFILE=$(echo -e "$(echo "$TODOTXT1" | grep "$WORD")\n$(echo "$TODOTXT2" | grep "$WORD")" | sort | uniq)
+	curl -X POST https://api.telegram.org/bot$TOKEN/sendMessage\?chat_id\=$ID\&text\="rctodosync: archivo todo.txt modificado en el Servidor 2. Sesión $1" > /dev/null 2>&1
     fi
    
     sleep $TIEMPO_ACTUALIZACION

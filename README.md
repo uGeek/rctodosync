@@ -6,7 +6,7 @@ Share tasks with multiple users using todo.txt
 Instala **rcsync** en tu dispositivo con linux
 
 ```
-git clone https://github.com/uGeek/rctodosync.git ~/rcsync
+git clone https://github.com/uGeek/rctodosync.git ~/rctodosync
 ```
 
 ```

@@ -1,10 +1,10 @@
 #!/bin/bash
-#  rctodosync v0.2 Share tasks with multiple users using todo.txt
-#  Copyright (C) 2021 Angel. uGeek
+#  rctodosync v0.4 Share tasks with multiple users using todo.txt
+#  Copyright (C) 2021-2023 Angel. uGeek
 #  ugeekpodcast@gmail.com
 #
 #
-VERSION=v0.3
+VERSION=v0.4
 #
 #
 

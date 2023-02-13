@@ -60,6 +60,36 @@ Para iniciar la sincronización del ejemplo trabajo, lo haremos del siguiente mo
 rctodosync trabajo
 ```
 
+## Plugins
+Es necesario crear una archivo de configuración para añadir mas funcionalidades.
+Imagina que estás sincronizando con una máquina remota utilizando wireguard. Podríamos añadir estas líneas para comprobar si wireguard funciona y en caso que no, envie una notificación mediante un bot de matrix y detenga el script. De este modo, evitaremos posibles errores en la sincronización.
+
+Este archivo, siguiendo el ejemplo anterior (trabajo) sería:
+
+
+```
+nano ~/.config/rctodosync/trabajo.pg
+```
+
+Copia en el archivo:
+
+```
+#!/bin/bash
+
+echo -e "$(date +'%Y-%m-%d  %T')      Leyendo el plugin $1.pg"
+
+if [ "$(sudo wg)" = "" ] ; then
+echo "wireguard no funciona. La sincronización se detendrá"
+matrix "rcsyntodo se ha detinido porque wg no funciona"
+exit
+fi
+
+```
+
+
+
+
+
 ## Otras sincronizaciones
 
 Crea tantos archivos de configuración como necesites.

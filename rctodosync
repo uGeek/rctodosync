@@ -145,5 +145,6 @@ do
 	$HOME/.config/rctodosync/notification "rctodosync: archivo todo.txt modificado en el Servidor 2 . Sesión $1" > /dev/null 2>&1
     fi
     sleep $TIEMPO_ACTUALIZACION
+    source ~/.config/rctodosync/$1.pg
 done
 
